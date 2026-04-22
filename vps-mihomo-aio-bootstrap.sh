@@ -38,11 +38,18 @@ DEPLOY_DIR="${DEPLOY_DIR:-/opt/mihomo-aio}"
 ENGINE="$(printf '%s' "${ENGINE:-docker}" | tr '[:upper:]' '[:lower:]')"
 case "$ENGINE" in docker|podman) ;; *) echo "错误：VPS_DEPLOY_CONTAINER_ENGINE 必须是 docker/podman" >&2; exit 1;; esac
 
-if [ "$ENGINE" = "docker" ] && [ "${MIHOMO_SKIP_DOCKER_ENSURE:-0}" != "1" ]; then
+if [ "${MIHOMO_SKIP_DOCKER_ENSURE:-0}" != "1" ]; then
   [ -f "${BOOTSTRAP_DIR}/mihomo-docker-prereq.inc.sh" ] || { echo "错误：缺少 mihomo-docker-prereq.inc.sh" >&2; exit 1; }
   # shellcheck disable=SC1091
   . "${BOOTSTRAP_DIR}/mihomo-docker-prereq.inc.sh"
   mihomo_ensure_docker_engine || exit 1
+fi
+
+if [ "${MIHOMO_SKIP_PODMAN_ENSURE:-0}" != "1" ]; then
+  [ -f "${BOOTSTRAP_DIR}/mihomo-podman-prereq.inc.sh" ] || { echo "错误：缺少 mihomo-podman-prereq.inc.sh" >&2; exit 1; }
+  # shellcheck disable=SC1091
+  . "${BOOTSTRAP_DIR}/mihomo-podman-prereq.inc.sh"
+  mihomo_ensure_podman_engine || exit 1
 fi
 
 command -v "$ENGINE" >/dev/null 2>&1 || { echo "错误：未找到容器命令: $ENGINE" >&2; exit 1; }
@@ -84,9 +91,16 @@ fi
 
 cd "$DEPLOY_DIR"
 if [ "$ENGINE" = "podman" ]; then
-  command -v podman-compose >/dev/null 2>&1 || { echo "错误：未找到 podman-compose" >&2; exit 1; }
-  podman-compose -f podman-compose.yaml down 2>/dev/null || true
-  podman-compose -f podman-compose.yaml up -d
+  if command -v podman >/dev/null 2>&1 && podman compose version >/dev/null 2>&1; then
+    podman compose -f podman-compose.yaml down 2>/dev/null || true
+    podman compose -f podman-compose.yaml up -d
+  elif command -v podman-compose >/dev/null 2>&1; then
+    podman-compose -f podman-compose.yaml down 2>/dev/null || true
+    podman-compose -f podman-compose.yaml up -d
+  else
+    echo "错误：未找到 podman compose 或 podman-compose" >&2
+    exit 1
+  fi
 else
   if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then
     docker compose -f docker-compose.yaml down 2>/dev/null || true

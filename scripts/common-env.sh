@@ -63,10 +63,12 @@ require_compose_command() {
       COMPOSE_FILE="docker-compose.yaml"
       ;;
     podman)
-      if command -v podman >/dev/null 2>&1 && command -v podman-compose >/dev/null 2>&1; then
+      if command -v podman >/dev/null 2>&1 && podman compose version >/dev/null 2>&1; then
+        COMPOSE_CMD="podman compose"
+      elif command -v podman-compose >/dev/null 2>&1; then
         COMPOSE_CMD="podman-compose"
       else
-        echo "错误：已选择 podman，但未找到 podman 或 podman-compose。" >&2
+        echo "错误：已选择 podman，但未找到 podman compose 或 podman-compose。" >&2
         return 1
       fi
       COMPOSE_FILE="podman-compose.yaml"
