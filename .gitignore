@@ -1,20 +1,27 @@
 # Local environment and secrets
 .env
+.env.*
+!.env.example
 .env.local
 .env.*.local
-!.env.example
 
-# Local OS noise
+# Local OS/editor noise
 .DS_Store
+*.swp
+*.swo
 
 # Runtime-generated dashboard config (contains values derived from .env)
 dashboard/runtime-config.json
 
-# Common secret material
+# Common secret material and local key files
 *.pem
 *.key
 *.p12
 *.pfx
+id_rsa
+id_rsa.pub
+id_ed25519
+id_ed25519.pub
 
 # Runtime data volumes
 data/config/*
