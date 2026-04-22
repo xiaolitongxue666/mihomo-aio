@@ -6,6 +6,10 @@
 
 Web 管理页面的交互与信息架构参考了 [FlClash](https://github.com/chen08209/FlClash) 的设计思路，并在 `dashboard/` 下以轻量原生前端实现（不引入 Flutter）。
 
+节点页效果示例：
+
+![FlClash-style node page](docs/images/flclash-style-node-page.png)
+
 ## 功能概览
 
 - 核心固定为 `mihomo`
