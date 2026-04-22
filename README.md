@@ -87,3 +87,16 @@ cp .env.example .env
 - `dashboard/`：Web 管理面
 - `scripts/`：运维与控制脚本
 - `DEPLOYMENT.md`：部署与排障补充文档
+
+
+## 许可证
+
+本项目采用 `Apache-2.0` 许可证，允许商用。
+
+再分发或二次发布时，请保留以下文件与声明：
+
+- `LICENSE`
+- `NOTICE`
+- 源代码中的版权与归属说明
+
+详细条款见 [`LICENSE`](LICENSE) 与 [`NOTICE`](NOTICE)。
