@@ -1,0 +1,24 @@
+# Local environment and secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Local OS noise
+.DS_Store
+
+# Runtime-generated dashboard config (contains values derived from .env)
+dashboard/runtime-config.json
+
+# Common secret material
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Runtime data volumes
+data/config/*
+!data/config/.gitkeep
+
+data/mihomo/*
+!data/mihomo/.gitkeep

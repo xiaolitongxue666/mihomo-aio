@@ -1,0 +1,1115 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>mihomo-aio Dashboard</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial;
+      background: #0d1016;
+      color: #eaf0f8;
+    }
+    .app { display: grid; grid-template-columns: 64px 220px 1fr; min-height: 100vh; }
+    .iconbar {
+      background: #0f141d;
+      border-right: 1px solid #1e2734;
+      padding: 12px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .icon-btn {
+      width: 36px; height: 36px; border-radius: 10px; border: 1px solid #2a3345;
+      background: #182131; color: #dbe7f7; cursor: pointer; font-size: 16px;
+    }
+    .icon-btn.active { background: #2a3448; border-color: #415775; }
+
+    .sidebar {
+      background: #131925;
+      border-right: 1px solid #222b3a;
+      padding: 16px;
+    }
+    .brand { font-size: 18px; font-weight: 700; margin-bottom: 16px; letter-spacing: 0.2px; }
+    .nav button {
+      width: 100%; text-align: left; margin: 4px 0; padding: 10px 12px;
+      border: 0; border-radius: 10px; color: #dbe5f3; background: transparent;
+      cursor: pointer; font-size: 14px;
+    }
+    .nav button.active, .nav button:hover { background: #202a3b; }
+
+    .main { padding: 18px; position: relative; }
+    .hidden { display: none !important; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .muted { color: #96a7c0; font-size: 12px; }
+    .ok { color: #5dd47d; }
+    .err { color: #ff7e88; }
+
+    button, input, select, textarea {
+      background: #121a27; color: #eaf0f8; border: 1px solid #2b3750;
+      border-radius: 8px; padding: 8px 10px;
+    }
+    button { cursor: pointer; }
+
+    .card {
+      background: linear-gradient(180deg, #151b27, #111722);
+      border: 1px solid #273245; border-radius: 12px; padding: 14px;
+    }
+    .stats { display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; margin-bottom: 12px; }
+
+    .overview-grid {
+      display:grid;
+      grid-template-columns: 1.3fr .9fr .9fr .9fr;
+      grid-template-areas:
+        "speed proxy detect mode"
+        "ip proxy traffic mode";
+      gap: 10px;
+      margin-bottom: 12px;
+      align-items: stretch;
+    }
+    .speed-card { grid-area: speed; min-height: 170px; }
+    .ip-card { grid-area: ip; min-height: 98px; }
+    .proxy-card-quick { grid-area: proxy; min-height: 120px; }
+    .detect-card { grid-area: detect; min-height: 120px; }
+    .traffic-card { grid-area: traffic; min-height: 120px; }
+    .mode-card { grid-area: mode; min-height: 252px; }
+    .card-title-row { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+    .card-title { font-weight:700; font-size:15px; display:flex; align-items:center; gap:8px; }
+    .speed-meta { font-size:13px; color:#b9c7db; display:flex; gap:12px; }
+    .speed-meta .up::before { content:'↑ '; }
+    .speed-meta .down::before { content:'↓ '; }
+    .chart-wrap { height:105px; border-radius:10px; background:#0d121b; border:1px solid #202c40; padding:8px; }
+    #speed-chart { width:100%; height:100%; display:block; }
+    .switch-row { display:flex; align-items:center; justify-content:space-between; margin-top:10px; }
+    .switch-label { color:#b8c7db; font-size:13px; }
+    .switch {
+      appearance:none; width:50px; height:28px; border-radius:999px; background:#2a3242;
+      position:relative; border:1px solid #3a465d; cursor:pointer; transition:all .2s ease;
+    }
+    .switch::after {
+      content:''; position:absolute; top:2px; left:2px; width:22px; height:22px;
+      border-radius:50%; background:#f3dbe5; transition:all .2s ease;
+    }
+    .switch:checked { background:#5c667b; }
+    .switch:checked::after { left:24px; }
+    .ip-main { font-size:30px; font-weight:800; letter-spacing:.2px; }
+    .ip-country { color:#b2c0d2; font-size:13px; margin-top:4px; }
+    .detect-ip { font-size:30px; font-weight:800; margin-top:8px; }
+    .traffic-wrap { display:flex; align-items:center; gap:10px; }
+    .donut {
+      width:86px; height:86px; border-radius:50%;
+      background: conic-gradient(#f1d7e3 0deg, #f1d7e3 220deg, #7f8aa0 220deg, #7f8aa0 360deg);
+      position:relative;
+    }
+    .donut::after {
+      content:''; position:absolute; inset:16px; border-radius:50%;
+      background:#111722; border:1px solid #2b3750;
+    }
+    .traffic-lines { flex:1; font-size:13px; color:#c4d0e2; }
+    .traffic-line { display:flex; justify-content:space-between; margin:6px 0; }
+    .mode-options { margin-top:8px; display:grid; gap:8px; }
+    .mode-item { display:flex; align-items:center; gap:8px; font-size:16px; }
+    @media (max-width: 1280px) {
+      .overview-grid {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+          "speed speed"
+          "proxy detect"
+          "ip traffic"
+          "mode mode";
+      }
+    }
+
+    .logs {
+      max-height: 180px; overflow: auto; background: #0a101a;
+      border: 1px solid #243247; border-radius: 8px; padding: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+    }
+    .logline { margin: 2px 0; white-space: pre-wrap; word-break: break-all; }
+
+    .proxy-head {
+      display: flex; align-items: center; justify-content: space-between;
+      gap: 10px; margin-bottom: 10px; color: #c7d5ea; font-size: 13px;
+    }
+    .proxy-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 10px; }
+    .proxy-card {
+      background: linear-gradient(180deg, #181e2a, #121824);
+      border: 1px solid #2a3549; border-radius: 14px; padding: 12px;
+      min-height: 104px; display: flex; flex-direction: column; justify-content: space-between;
+      transition: border-color .2s ease, transform .15s ease;
+      cursor: pointer;
+    }
+    .proxy-card:hover { border-color: #3e5071; transform: translateY(-1px); }
+    .proxy-card.active {
+      border-color: #f1d7e3;
+      background: linear-gradient(180deg,#2a2329,#1d1a22);
+      box-shadow: 0 0 0 1px #f1d7e388 inset, 0 0 0 2px #f1d7e344;
+    }
+    .proxy-card.active .proxy-title { color: #fff5fa; }
+    .proxy-card.active .proxy-sub,
+    .proxy-card.active .muted { color: #e3ccd8; }
+    .proxy-title { font-weight: 700; font-size: 16px; line-height: 1.2; word-break: break-word; color: #f2f7ff; margin-bottom: 8px; }
+    .proxy-sub { color: #a9b8cd; font-size: 13px; margin-bottom: 10px; text-transform: capitalize; }
+    .proxy-bottom { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .latency { font-weight: 700; font-size: 22px; letter-spacing: .2px; }
+    .latency.good { color:#52d273; } .latency.warn { color:#f5b44f; } .latency.bad { color:#ff6d74; } .latency.na { color:#8d9ab0; }
+    .tag { font-size: 11px; color: #c4d1e5; background: #1e2738; border: 1px solid #31425f; border-radius: 999px; padding: 2px 8px; }
+
+    .latency-loading {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #6a7489;
+      border-top-color: #f1d7e3;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .configs-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; }
+    .config-card {
+      background: linear-gradient(180deg,#201c22,#18161c);
+      border:1px solid #473f4d; border-radius:14px; padding:12px;
+      min-height: 96px;
+    }
+    .config-card.active { border-color:#b89ba8; box-shadow: 0 0 0 1px #b89ba833 inset; }
+    .config-title { font-weight:700; font-size:17px; margin-bottom:8px; }
+    .config-meta { color:#b4a8b6; font-size:12px; }
+    .config-actions { margin-top:8px; display:flex; gap:8px; }
+
+    .settings-split { display:grid; grid-template-columns: 1.3fr 1fr; gap: 10px; }
+    .field { display:grid; gap:6px; margin-bottom:10px; }
+    .field label { font-size: 12px; color: #adc0dc; }
+
+    .command-box {
+      background: #0a101a; border: 1px solid #243247; border-radius: 8px;
+      padding: 10px; white-space: pre-wrap; word-break: break-all;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #cfe1fb;
+    }
+
+    .small-btn { padding: 6px 10px; font-size: 12px; }
+
+    .fab {
+      position: fixed; right: 18px; bottom: 18px;
+      display:flex; align-items:center; gap:8px;
+      background: #dfd0d8; color: #1d161b; border: 1px solid #f2e8ee;
+      border-radius: 16px; padding: 12px 16px; font-weight: 700;
+      box-shadow: 0 4px 14px #00000055;
+    }
+    .fab.hidden { display:none; }
+
+    .modal-mask {
+      position: fixed; inset:0; background:#00000088;
+      display:none; align-items:center; justify-content:center;
+      z-index: 999;
+    }
+    .modal-mask.show { display:flex; }
+    .modal {
+      width: min(560px, 92vw);
+      background:#161c28; border:1px solid #2a3549;
+      border-radius: 14px; padding: 14px;
+    }
+    .modal h3 { margin: 0 0 10px 0; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="iconbar">
+    <button class="icon-btn active" data-view="overview">▦</button>
+    <button class="icon-btn" data-view="proxies">◫</button>
+        <button class="icon-btn" data-view="settings">⚙</button>
+  </aside>
+
+  <aside class="sidebar">
+    <div class="brand">配置</div>
+    <div class="nav">
+      <button data-view="overview" class="active">概览</button>
+      <button data-view="proxies">节点</button>
+      <button data-view="settings">设置</button>
+    </div>
+    <div class="muted" style="margin-top:14px;">FlClash 风格布局（轻量版）</div>
+  </aside>
+
+  <main class="main">
+    <section id="view-overview">
+      <div class="toolbar">
+        <button id="refresh-overview">刷新</button>
+        <span id="api-status" class="muted">API 未检测</span>
+      </div>
+
+      <div class="overview-grid">
+        <div class="card speed-card">
+          <div class="card-title-row">
+            <div class="card-title">⌁ 网络速度</div>
+            <div class="speed-meta"><span class="up" id="speed-up">0B/s</span><span class="down" id="speed-down">0B/s</span></div>
+          </div>
+          <div class="chart-wrap"><canvas id="speed-chart" width="560" height="170"></canvas></div>
+        </div>
+
+        <div class="card proxy-card-quick">
+          <div class="card-title">🛠 系统代理</div>
+          <div class="switch-row"><span class="switch-label">选项</span><input id="system-proxy-toggle" class="switch" type="checkbox" /></div>
+          <div class="muted" style="margin-top:8px;">与右下角启动按钮联动</div>
+        </div>
+
+        <div class="card detect-card">
+          <div class="card-title">🌐 网络检测</div>
+          <div id="detect-ip" class="detect-ip">-</div>
+          <div id="detect-country" class="muted" style="margin-top:4px;">-</div>
+        </div>
+
+        <div class="card traffic-card">
+          <div class="card-title">◔ 流量统计</div>
+          <div class="traffic-wrap">
+            <div id="traffic-donut" class="donut"></div>
+            <div class="traffic-lines">
+              <div class="traffic-line"><span>↑ 上传</span><b id="traffic-up">0 B</b></div>
+              <div class="traffic-line"><span>↓ 下载</span><b id="traffic-down">0 B</b></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card mode-card">
+          <div class="card-title">⎇ 出站模式</div>
+          <div class="mode-options">
+            <label class="mode-item"><input type="radio" name="outbound-mode" value="rule" /> 规则</label>
+            <label class="mode-item"><input type="radio" name="outbound-mode" value="global" /> 全局</label>
+            <label class="mode-item"><input type="radio" name="outbound-mode" value="direct" /> 直连</label>
+          </div>
+        </div>
+
+        <div class="card ip-card">
+          <div class="card-title">⌂ 内网 IP</div>
+          <div id="intranet-ip" class="ip-main">127.0.0.1</div>
+          <div class="ip-country">本机</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="toolbar"><b>请求日志</b><button class="small-btn" id="clear-logs">清空</button></div>
+        <div id="logs" class="logs"></div>
+      </div>
+    </section>
+
+    <section id="view-proxies" class="hidden">
+      <div class="proxy-head">
+        <div>
+          <div><b id="proxy-group-name">策略组: -</b></div>
+          <div class="muted" id="proxy-group-now">当前: -</div>
+        </div>
+        
+      </div>
+      <div id="proxy-grid" class="proxy-grid"></div>
+    </section>
+
+    <section id="view-settings" class="hidden">
+      <div class="toolbar" style="justify-content:space-between;">
+        <b>配置</b>
+        <div class="muted" id="cfg-updated">-</div>
+      </div>
+
+      <div id="configs-grid" class="configs-grid"></div>
+
+      <div class="settings-split" style="margin-top:10px;">
+        <div class="card">
+          <div class="toolbar"><b>连接设置</b></div>
+          <div class="field"><label>API 地址</label><input id="api-url" /></div>
+          <div class="field"><label>Secret</label><input id="api-secret" /></div>
+          <div class="toolbar"><button id="detect-api">自动检测</button><button id="save-api">保存</button></div>
+          <div class="muted">检测顺序: 当前配置 -> 当前主机:19090 -> 9090 -> 9091</div>
+
+          <div style="margin-top:10px;"><b class="muted">端口配置(.env)</b></div>
+          <div class="muted" id="ports-view" style="margin-top:6px;">-</div>
+          <div class="toolbar" style="margin-top:8px;"><button id="copy-port-check">复制端口冲突检查命令</button></div>
+        </div>
+
+        <div class="card">
+          <div class="toolbar"><b>订阅编辑</b></div>
+          <div class="field"><label>订阅 URL (RAW_SUB_URL)</label><textarea id="sub-url" rows="3" style="resize:vertical;"></textarea></div>
+          <div class="field"><label>转换目标 (SUBCONVERTER_TARGET)</label><input id="sub-target" /></div>
+          <div class="field"><label>模板 (SUBCONVERTER_TEMPLATE)</label><input id="sub-template" /></div>
+          <div class="toolbar"><button id="save-sub">保存到浏览器</button><button id="copy-command">复制应用命令</button></div>
+          <div class="muted">浏览器不能直接写宿主机 .env。复制命令后在终端执行。</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:10px;">
+        <div class="toolbar"><b>终端应用命令</b></div>
+        <div id="env-command" class="command-box"># 保存配置后生成命令</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<button class="fab" id="proxy-fab"><span id="proxy-fab-icon">▶</span><span id="proxy-fab-text">启动代理</span></button>
+<button class="fab" id="open-add-profile" style="right:18px; bottom:82px;">＋ 添加配置</button>
+<button class="fab hidden" id="proxy-delay-fab"><span id="proxy-delay-icon">⏱</span><span id="proxy-delay-text">延迟测试</span></button>
+
+<div id="modal-mask" class="modal-mask">
+  <div class="modal">
+    <h3>添加配置</h3>
+    <div class="field"><label>名称</label><input id="modal-name" placeholder="例如: gw树洞.yaml" /></div>
+    <div class="field"><label>订阅 URL</label><textarea id="modal-url" rows="3" style="resize:vertical;"></textarea></div>
+    <div class="field"><label>转换目标</label><input id="modal-target" value="clash" /></div>
+    <div class="field"><label>模板</label><input id="modal-template" /></div>
+    <div class="toolbar" style="justify-content:flex-end; margin-top:8px;">
+      <button id="modal-cancel">取消</button>
+      <button id="modal-save">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const storageKeys = {
+  api: 'mihomo_api', secret: 'mihomo_secret',
+  profiles: 'mihomo_profiles', activeProfile: 'mihomo_active_profile',
+  proxyRunning: 'mihomo_proxy_running', proxyStartAt: 'mihomo_proxy_start_at', systemProxyUi: 'mihomo_system_proxy_ui'
+};
+
+let apiBase = localStorage.getItem(storageKeys.api) || '';
+let apiSecret = localStorage.getItem(storageKeys.secret) || 'change-me';
+let runtimeConfig = null;
+let profiles = [];
+let activeProfileId = localStorage.getItem(storageKeys.activeProfile) || '';
+let proxyRunning = localStorage.getItem(storageKeys.proxyRunning) === '1';
+let proxyStartAt = Number(localStorage.getItem(storageKeys.proxyStartAt) || '0');
+let runtimeTimer = null;
+const speedPoints = [];
+let trafficUpTotal = 0;
+let trafficDownTotal = 0;
+let previousUploadTotal = null;
+let previousDownloadTotal = null;
+let previousTrafficSampleAt = null;
+let isDelayTesting = false;
+const testingProxyNames = new Set();
+
+const logsEl = document.getElementById('logs');
+function log(message, type='info') {
+  const ts = new Date().toISOString().replace('T',' ').replace('Z','');
+  const line = document.createElement('div');
+  line.className = `logline ${type === 'error' ? 'err' : ''}`;
+  line.textContent = `[${ts}] ${message}`;
+  logsEl.prepend(line);
+}
+
+function getHeaders(extra={}) { return { ...(apiSecret ? {'Authorization': `Bearer ${apiSecret}`} : {}), ...extra }; }
+
+async function fetchJson(path, init={}) {
+  if (!apiBase) throw new Error('API 地址为空');
+  const url = `${apiBase}${path}`;
+  log(`REQ ${init.method || 'GET'} ${url}`);
+  let response;
+  try { response = await fetch(url, { ...init, headers: { ...getHeaders(), ...(init.headers||{}) } }); }
+  catch (err) { log(`ERR ${url} -> ${err}`, 'error'); throw err; }
+  if (!response.ok) {
+    const body = await response.text();
+    log(`HTTP ${response.status} ${url} ${body.slice(0,200)}`, 'error');
+    throw new Error(`HTTP ${response.status}`);
+  }
+  const rawBody = await response.text();
+  const contentType = response.headers.get('content-type') || '';
+  let data = null;
+  if (rawBody.trim()) {
+    if (contentType.includes('application/json')) {
+      data = JSON.parse(rawBody);
+    } else {
+      try {
+        data = JSON.parse(rawBody);
+      } catch {
+        data = rawBody;
+      }
+    }
+  }
+  log(`OK ${url}`);
+  return data;
+}
+
+async function detectApiBase() {
+  const candidates = [];
+  if (apiBase) candidates.push(apiBase);
+  const host = location.hostname;
+  candidates.push(`http://${host}:19090`, `http://${host}:9090`, `http://${host}:9091`);
+
+  for (const c of [...new Set(candidates)]) {
+    try {
+      const resp = await fetch(`${c}/version`, { headers: getHeaders(), cache: 'no-store' });
+      if (resp.ok) {
+        apiBase = c;
+        document.getElementById('api-status').innerHTML = `<span class='ok'>API 已连接</span>`;
+        log(`API 自动检测成功: ${c}`);
+        return c;
+      }
+      log(`API 检测失败 ${c} -> HTTP ${resp.status}`, 'error');
+    } catch (err) {
+      log(`API 检测失败 ${c} -> ${err}`, 'error');
+    }
+  }
+  document.getElementById('api-status').innerHTML = `<span class='err'>API 未连接</span>`;
+  throw new Error('未找到可用 API');
+}
+
+function switchView(view) {
+  document.querySelectorAll('.nav button, .icon-btn').forEach(btn => btn.classList.toggle('active', btn.dataset.view===view));
+  ['overview','proxies','settings'].forEach(v => {
+    document.getElementById(`view-${v}`).classList.toggle('hidden', v!==view);
+  });
+  document.getElementById('proxy-fab').classList.toggle('hidden', view !== 'overview');
+  document.getElementById('open-add-profile').classList.toggle('hidden', view !== 'settings');
+  document.getElementById('proxy-delay-fab').classList.toggle('hidden', view !== 'proxies');
+}
+
+document.querySelectorAll('.nav button, .icon-btn').forEach(btn => btn.onclick = () => switchView(btn.dataset.view));
+document.getElementById('clear-logs').onclick = () => { logsEl.innerHTML = ''; };
+
+function renderLatency(delay) {
+  if (delay === null || delay === undefined || delay === '-' || Number.isNaN(Number(delay))) return { text:'Timeout', cls:'na' };
+  const v = Number(delay);
+  if (v <= 120) return { text:`${v}ms`, cls:'good' };
+  if (v <= 280) return { text:`${v}ms`, cls:'warn' };
+  return { text:`${v}ms`, cls:'bad' };
+}
+
+function updateProxyCardDelayDisplay(proxyName, delayValue) {
+  const card = document.querySelector(`.proxy-card[data-proxy-name="${CSS.escape(proxyName)}"]`);
+  if (!card) return;
+  const latencyHost = card.querySelector('.proxy-latency-host');
+  if (!latencyHost) return;
+  const lat = renderLatency(delayValue);
+  latencyHost.innerHTML = `<div class='latency ${lat.cls}'>${lat.text}</div>`;
+}
+
+
+function detectProxyGroup(map) {
+  const preferred = [
+    '手动选择', '🔰 节点选择', '节点选择', 'PROXY', 'proxy',
+    '♻️ 自动选择', '自动选择', 'auto'
+  ];
+
+  const isUsableGroup = (name, group) => {
+    if (!group || !Array.isArray(group.all) || group.all.length === 0) return false;
+    const upperName = String(name || '').toUpperCase();
+    if (upperName === 'GLOBAL' || upperName === 'DIRECT') return false;
+    const selectable = group.all.filter((item) => {
+      if (typeof item !== 'string') return false;
+      if (item === 'DIRECT' || item === 'REJECT') return false;
+      if (/^(Expire|Traffic|Sync):/i.test(item)) return false;
+      const detail = map[item] || {};
+      const itemType = String(detail.type || '').toLowerCase();
+      if (['selector', 'urltest', 'fallback', 'loadbalance'].includes(itemType)) return false;
+      return true;
+    });
+    return selectable.length > 0;
+  };
+
+  for (const name of preferred) {
+    if (isUsableGroup(name, map[name])) return name;
+  }
+
+  for (const [name, group] of Object.entries(map)) {
+    if (isUsableGroup(name, group)) return name;
+  }
+  return null;
+}
+
+
+function fmtBytes(value) {
+  const units = ['B','KB','MB','GB','TB'];
+  let v = Number(value || 0), i = 0;
+  while (v >= 1024 && i < units.length - 1) { v /= 1024; i++; }
+  return `${v.toFixed(v >= 100 ? 0 : v >= 10 ? 1 : 2)} ${units[i]}`;
+}
+function fmtSpeed(v) { return `${fmtBytes(v)}/s`; }
+function fmtDuration(sec) {
+  const s = Math.max(0, Math.floor(sec));
+  const hh = String(Math.floor(s/3600)).padStart(2,'0');
+  const mm = String(Math.floor((s%3600)/60)).padStart(2,'0');
+  const ss = String(s%60).padStart(2,'0');
+  return `${hh}:${mm}:${ss}`;
+}
+
+async function updateModeSelection() {
+  const cfg = await fetchJson('/configs');
+  const mode = (cfg.mode || 'rule').toLowerCase();
+  document.querySelectorAll('input[name="outbound-mode"]').forEach(r => r.checked = (r.value === mode));
+  const running = mode !== 'direct';
+  if (running !== proxyRunning) {
+    proxyRunning = running;
+    if (proxyRunning && !proxyStartAt) proxyStartAt = Date.now();
+    if (!proxyRunning) proxyStartAt = 0;
+    localStorage.setItem(storageKeys.proxyRunning, proxyRunning ? '1':'0');
+    localStorage.setItem(storageKeys.proxyStartAt, String(proxyStartAt));
+  }
+  localStorage.setItem(storageKeys.systemProxyUi, proxyRunning ? '1':'0');
+  document.getElementById('system-proxy-toggle').checked = proxyRunning;
+  updateFab();
+}
+
+async function setMode(mode) {
+  await fetchJson('/configs', {
+    method:'PATCH',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ mode })
+  });
+  await updateModeSelection();
+}
+
+function updateFab() {
+  const icon = document.getElementById('proxy-fab-icon');
+  const text = document.getElementById('proxy-fab-text');
+  if (!proxyRunning) {
+    icon.textContent = '▶';
+    text.textContent = '启动代理';
+    return;
+  }
+  icon.textContent = '⏸';
+  const elapsed = proxyStartAt ? (Date.now() - proxyStartAt) / 1000 : 0;
+  text.textContent = fmtDuration(elapsed);
+}
+
+function startRuntimeTicker() {
+  if (runtimeTimer) clearInterval(runtimeTimer);
+  runtimeTimer = setInterval(updateFab, 1000);
+}
+
+function drawSpeedChart() {
+  const canvas = document.getElementById('speed-chart');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.clearRect(0,0,w,h);
+
+  ctx.strokeStyle = '#2a364d';
+  ctx.lineWidth = 1;
+  for (let i=0;i<4;i++) {
+    const y = (h/4) * i + 8;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+  }
+
+  if (speedPoints.length < 2) return;
+  const maxV = Math.max(1, ...speedPoints.map(p => p.up + p.down));
+
+  ctx.strokeStyle = '#f3dbe5';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  speedPoints.forEach((p, i) => {
+    const x = (i/(speedPoints.length-1))*w;
+    const y = h - ((p.up + p.down)/maxV)*(h-12) - 6;
+    if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+}
+
+async function updateTrafficStats() {
+  try {
+    const data = await fetchJson('/connections');
+    const uploadTotalNow = Number(data?.uploadTotal || 0);
+    const downloadTotalNow = Number(data?.downloadTotal || 0);
+
+    const nowMs = Date.now();
+    if (previousUploadTotal === null) previousUploadTotal = uploadTotalNow;
+    if (previousDownloadTotal === null) previousDownloadTotal = downloadTotalNow;
+    if (previousTrafficSampleAt === null) previousTrafficSampleAt = nowMs;
+
+    const elapsedSec = Math.max(0.5, (nowMs - previousTrafficSampleAt) / 1000);
+    const upDelta = Math.max(0, uploadTotalNow - previousUploadTotal);
+    const downDelta = Math.max(0, downloadTotalNow - previousDownloadTotal);
+
+    const upSpeed = upDelta / elapsedSec;
+    const downSpeed = downDelta / elapsedSec;
+
+    previousUploadTotal = uploadTotalNow;
+    previousDownloadTotal = downloadTotalNow;
+    previousTrafficSampleAt = nowMs;
+
+    trafficUpTotal = uploadTotalNow;
+    trafficDownTotal = downloadTotalNow;
+
+    document.getElementById('speed-up').textContent = fmtSpeed(upSpeed);
+    document.getElementById('speed-down').textContent = fmtSpeed(downSpeed);
+    document.getElementById('traffic-up').textContent = fmtBytes(trafficUpTotal);
+    document.getElementById('traffic-down').textContent = fmtBytes(trafficDownTotal);
+
+    const total = Math.max(1, trafficUpTotal + trafficDownTotal);
+    const upDeg = Math.round((trafficUpTotal / total) * 360);
+    document.getElementById('traffic-donut').style.background = `conic-gradient(#f1d7e3 0deg, #f1d7e3 ${upDeg}deg, #7f8aa0 ${upDeg}deg, #7f8aa0 360deg)`;
+
+    speedPoints.push({ up: upSpeed, down: downSpeed });
+    while (speedPoints.length > 34) speedPoints.shift();
+    drawSpeedChart();
+  } catch (err) {
+    log(`更新流量统计失败: ${err}`, 'error');
+  }
+}
+
+async function updateNetworkDetection() {
+  const ipEl = document.getElementById('detect-ip');
+  const countryEl = document.getElementById('detect-country');
+  try {
+    const r = await fetch('https://api.ipify.org?format=json');
+    const j = await r.json();
+    ipEl.textContent = j.ip || '-';
+    countryEl.textContent = '公网检测';
+  } catch {
+    ipEl.textContent = '155.254.12.33';
+    countryEl.textContent = '网络检测不可用';
+  }
+}
+
+function updateIntranetIp() {
+  document.getElementById('intranet-ip').textContent = '127.0.0.1';
+}
+
+async function loadOverview() {
+  try {
+    if (!apiBase) await detectApiBase();
+    const versionData = await fetchJson('/version');
+    const connData = await fetchJson('/connections');
+    const versionNode = document.getElementById('version');
+    const connNode = document.getElementById('conn-count');
+    const apiNode = document.getElementById('api');
+    if (versionNode) versionNode.textContent = versionData.version || JSON.stringify(versionData);
+    if (connNode) connNode.textContent = (connData.connections||[]).length;
+    if (apiNode) apiNode.textContent = apiBase;
+    document.getElementById('api-status').innerHTML = `<span class='ok'>API 已连接</span>`;
+    await updateModeSelection();
+    updateIntranetIp();
+    await updateNetworkDetection();
+    await updateTrafficStats();
+  } catch (err) {
+    const versionNode = document.getElementById('version');
+    if (versionNode) versionNode.textContent = `连接失败: ${err}`;
+    document.getElementById('api-status').innerHTML = `<span class='err'>API 未连接</span>`;
+  }
+}
+
+async function loadProxies() {
+  const grid = document.getElementById('proxy-grid');
+  grid.innerHTML = '';
+  try {
+    if (!apiBase) await detectApiBase();
+    const data = await fetchJson('/proxies');
+    const map = data.proxies || {};
+    const groupName = detectProxyGroup(map);
+    if (!groupName) { grid.innerHTML = `<div class='card err'>未解析到可切换策略组</div>`; return; }
+    const group = map[groupName] || {};
+    const all = (group.all || []).filter((nodeName) => {
+      if (nodeName === 'DIRECT' || nodeName === 'REJECT') return false;
+      if (/^(Expire|Traffic|Sync):/i.test(nodeName)) return false;
+      const detail = map[nodeName] || {};
+      const detailType = String(detail.type || '').toLowerCase();
+      if (['selector', 'urltest', 'fallback', 'loadbalance'].includes(detailType)) return false;
+      return true;
+    });
+    const now = group.now || '-';
+    document.getElementById('proxy-group-name').textContent = `策略组: ${groupName}`;
+    document.getElementById('proxy-group-now').textContent = `当前: ${now}`;
+
+    for (const name of all.slice(0,120)) {
+      const detail = map[name] || {};
+      let delay = detail.history && detail.history.length ? detail.history[0].delay : '-';
+      const lat = renderLatency(delay);
+      const isLoadingDelay = isDelayTesting && testingProxyNames.has(name);
+      const latencyHtml = isLoadingDelay
+        ? `<div class='latency-loading' title='测速中'></div>`
+        : `<div class='latency ${lat.cls}'>${lat.text}</div>`;
+      const card = document.createElement('div');
+      card.className = `proxy-card ${name===now?'active':''}`;
+      card.dataset.proxyName = name;
+      card.innerHTML = `
+        <div>
+          <div class='proxy-title'>${name}</div>
+          <div class='proxy-sub'>${detail.type || 'Unknown'}${detail.udp ? ' · UDP' : ''}</div><div class='muted'>${(detail.now || detail.name || '').toString().slice(0, 52)}</div>
+        </div>
+        <div class='proxy-bottom'>
+          <div class='proxy-latency-host'>${latencyHtml}</div>
+          <div style='display:flex; gap:6px; align-items:center;'>
+            ${name===now?"<span class='tag'>已选中</span>":''}
+          </div>
+        </div>`;
+      card.onclick = async () => {
+        if (name === now) return;
+        try {
+          await fetchJson(`/proxies/${encodeURIComponent(groupName)}`, {
+            method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name})
+          });
+          log(`已切换节点: ${name}`);
+          await loadProxies();
+        } catch (err) {
+          log(`切换失败 ${name}: ${err}`, 'error');
+          alert(`切换失败: ${err}`);
+        }
+      };
+      grid.appendChild(card);
+    }
+    if (all.length===0) grid.innerHTML = `<div class='card'>策略组存在，但节点为空</div>`;
+  } catch (err) {
+    grid.innerHTML = `<div class='card err'>加载失败: ${err}</div>`;
+  }
+}
+
+
+async function batchDelayTestAll() {
+  const button = document.getElementById('proxy-delay-fab');
+  const text = document.getElementById('proxy-delay-text');
+  if (button.dataset.running === '1') return;
+  button.dataset.running = '1';
+  const originalText = text.textContent;
+  text.textContent = '测速中...';
+  try {
+    if (!apiBase) await detectApiBase();
+    const data = await fetchJson('/proxies');
+    const map = data.proxies || {};
+    const groupName = detectProxyGroup(map);
+    if (!groupName) throw new Error('未解析到可测速策略组');
+    const group = map[groupName] || {};
+    const all = (group.all || []).filter((nodeName) => {
+      if (nodeName === 'DIRECT' || nodeName === 'REJECT') return false;
+      if (/^(Expire|Traffic|Sync):/i.test(nodeName)) return false;
+      const detail = map[nodeName] || {};
+      const detailType = String(detail.type || '').toLowerCase();
+      if (['selector', 'urltest', 'fallback', 'loadbalance'].includes(detailType)) return false;
+      return true;
+    });
+
+    isDelayTesting = true;
+    testingProxyNames.clear();
+    for (const name of all) testingProxyNames.add(name);
+    button.classList.add('hidden');
+    await loadProxies();
+
+    const timeout = 10000;
+    const testUrl = 'https://www.gstatic.com/generate_204';
+    const concurrency = 40;
+    let cursor = 0;
+    const worker = async () => {
+      while (cursor < all.length) {
+        const index = cursor++;
+        const proxyName = all[index];
+        try {
+          const delayResult = await fetchJson(`/proxies/${encodeURIComponent(proxyName)}/delay?url=${encodeURIComponent(testUrl)}&timeout=${timeout}`);
+          testingProxyNames.delete(proxyName);
+          updateProxyCardDelayDisplay(proxyName, delayResult?.delay);
+        } catch {
+          testingProxyNames.delete(proxyName);
+          updateProxyCardDelayDisplay(proxyName, '-');
+        }
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(concurrency, all.length || 1) }, worker));
+    isDelayTesting = false;
+    testingProxyNames.clear();
+    await loadProxies();
+    log(`并发测速完成: ${all.length} 个节点`);
+  } catch (err) {
+    isDelayTesting = false;
+    testingProxyNames.clear();
+    await loadProxies();
+    log(`并发测速失败: ${err}`, 'error');
+    alert(`并发测速失败: ${err}`);
+  } finally {
+    text.textContent = originalText;
+    button.dataset.running = '0';
+    if (document.querySelector('.nav button.active')?.dataset.view === 'proxies') {
+      button.classList.remove('hidden');
+    }
+  }
+}
+
+function mergeProfiles(localProfiles, envProfiles) {
+  const map = new Map();
+  for (const p of (envProfiles || [])) map.set(p.id || `env-${Math.random()}`, p);
+  for (const p of (localProfiles || [])) map.set(p.id, p);
+  return [...map.values()];
+}
+
+async function loadRuntimeConfig() {
+  try {
+    const resp = await fetch('/runtime-config.json', { cache: 'no-store' });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    runtimeConfig = await resp.json();
+    document.getElementById('cfg-updated').textContent = `配置更新时间: ${runtimeConfig.updatedAt || '-'}`;
+  } catch (err) {
+    runtimeConfig = { profiles: [], ports: {}, defaults: {} };
+    document.getElementById('cfg-updated').textContent = '配置更新时间: -';
+    log(`读取 runtime-config.json 失败: ${err}`, 'error');
+  }
+}
+
+async function loadSubscriptionSummary() {
+  try {
+    if (!apiBase) await detectApiBase();
+    const data = await fetchJson('/proxies');
+    const names = Object.keys(data.proxies || {});
+    let traffic = '';
+    let expire = '';
+    for (const name of names) {
+      if (!traffic && /^Traffic:/i.test(name)) traffic = name.replace(/^Traffic:\s*/i, '');
+      if (!expire && /^Expire:/i.test(name)) expire = name.replace(/^Expire:\s*/i, '');
+      if (traffic && expire) break;
+    }
+    return { traffic, expire };
+  } catch {
+    return { traffic: '', expire: '' };
+  }
+}
+
+function currentPortsInfo() {
+  const ports = runtimeConfig?.ports || {};
+  const hostProxy = ports.allProxyPort ?? '-';
+  const containerProxy = ports.mixedPort ?? 7890;
+  const hostApi = ports.externalControllerPort ?? '-';
+  const containerApi = ports.externalControllerContainerPort ?? ports.externalControllerPort ?? '-';
+  const hostDashboard = ports.controlPanelPort ?? '-';
+  const containerDashboard = ports.dashboardPort ?? 80;
+  const hostSubconverter = ports.subconverterHostPort ?? '-';
+  const containerSubconverter = ports.subconverterContainerPort ?? 25500;
+  return [
+    `Proxy: 宿主机 ${hostProxy} <-> 容器 ${containerProxy}`,
+    `API: 宿主机 ${hostApi} <-> 容器 ${containerApi}`,
+    `Dashboard: 宿主机 ${hostDashboard} <-> 容器 ${containerDashboard}`,
+    `Subconverter: 宿主机 ${hostSubconverter} <-> 容器 ${containerSubconverter}`
+  ].join('<br>');
+}
+
+function renderProfiles() {
+  const hostProfiles = runtimeConfig?.profiles || [];
+  const localProfiles = JSON.parse(localStorage.getItem(storageKeys.profiles) || '[]');
+  profiles = mergeProfiles(localProfiles, hostProfiles);
+  if (!activeProfileId && profiles.length) activeProfileId = profiles[0].id;
+  const active = profiles.find(p => p.id===activeProfileId) || profiles[0] || null;
+
+  const grid = document.getElementById('configs-grid');
+  grid.innerHTML = '';
+  for (const p of profiles) {
+    const card = document.createElement('div');
+    card.className = `config-card ${p.id===activeProfileId?'active':''}`;
+    const traffic = p.meta?.traffic || '-';
+    const expire = p.meta?.expire || '-';
+    card.innerHTML = `
+      <div class='config-title'>${p.name || '未命名配置'}</div>
+      <div class='config-meta'>${traffic}${traffic!=='-' && expire!=='-' ? ' · ' : ''}${expire}</div>
+      <div class='config-meta'>${p.source === 'env' ? '刚刚' : '本地'}</div>
+      <div class='config-actions'>
+        <button class='small-btn'>使用</button>
+      </div>`;
+    card.querySelector('button').onclick = () => {
+      activeProfileId = p.id;
+      localStorage.setItem(storageKeys.activeProfile, activeProfileId);
+      fillFormFromProfile(p);
+      renderProfiles();
+      buildCommandPreview();
+    };
+    grid.appendChild(card);
+  }
+
+  if (active) fillFormFromProfile(active);
+
+  document.getElementById('ports-view').innerHTML = `${currentPortsInfo()}<br>(请避免与本机已有服务冲突)`;
+}
+
+function fillFormFromProfile(p) {
+  if (!p) return;
+  const isEnvProfile = p.source === 'env';
+  document.getElementById('sub-url').value = isEnvProfile ? '' : (p.url || '');
+  document.getElementById('sub-target').value = p.target || runtimeConfig?.defaults?.subTarget || 'clash';
+  document.getElementById('sub-template').value = p.template || runtimeConfig?.defaults?.subTemplate || '';
+}
+
+function buildCommandPreview() {
+  const subUrl = (document.getElementById('sub-url').value || '').trim();
+  const subTarget = (document.getElementById('sub-target').value || '').trim() || 'clash';
+  const subTemplate = (document.getElementById('sub-template').value || '').trim();
+  const escapedUrl = subUrl.replace(/'/g, "'\\''");
+  const cmd = [
+    'cd /Users/liyong/Code/Proxy/mihomo-aio',
+    `perl -0777 -pe 's#^RAW_SUB_URL=.*#RAW_SUB_URL="${escapedUrl}"#m; s#^SUBCONVERTER_TARGET=.*#SUBCONVERTER_TARGET=${subTarget}#m; s#^SUBCONVERTER_TEMPLATE=.*#SUBCONVERTER_TEMPLATE=${subTemplate}#m' -i .env`,
+    './scripts/subscription-hot-reload.sh'
+  ].join('\n');
+  document.getElementById('env-command').textContent = cmd;
+  return cmd;
+}
+
+function openAddModal() { document.getElementById('modal-mask').classList.add('show'); }
+function closeAddModal() { document.getElementById('modal-mask').classList.remove('show'); }
+
+function saveNewProfile() {
+  const name = document.getElementById('modal-name').value.trim();
+  const url = document.getElementById('modal-url').value.trim();
+  const target = document.getElementById('modal-target').value.trim() || 'clash';
+  const template = document.getElementById('modal-template').value.trim();
+  if (!url) { alert('订阅 URL 不能为空'); return; }
+
+  const localProfiles = JSON.parse(localStorage.getItem(storageKeys.profiles) || '[]');
+  const id = `local-${Date.now()}`;
+  localProfiles.push({ id, name: name || 'new.yaml', url, target, template, source: 'local', meta: {} });
+  localStorage.setItem(storageKeys.profiles, JSON.stringify(localProfiles));
+  activeProfileId = id;
+  localStorage.setItem(storageKeys.activeProfile, activeProfileId);
+  closeAddModal();
+  renderProfiles();
+  buildCommandPreview();
+  log(`已新增配置: ${name || 'new.yaml'}`);
+}
+
+function initSettings() {
+  document.getElementById('api-url').value = apiBase || `http://${location.hostname}:19090`;
+  document.getElementById('api-secret').value = apiSecret;
+  document.getElementById('system-proxy-toggle').checked = proxyRunning || localStorage.getItem(storageKeys.systemProxyUi) === '1';
+}
+
+// events
+for (const id of ['sub-url','sub-target','sub-template']) {
+  document.addEventListener('input', (e) => { if (e.target.id===id) buildCommandPreview(); });
+}
+
+document.getElementById('refresh-overview').onclick = () => loadOverview();
+
+document.getElementById('detect-api').onclick = async () => {
+  apiBase = '';
+  try {
+    await detectApiBase();
+    document.getElementById('api-url').value = apiBase;
+    const apiNode = document.getElementById('api');
+    if (apiNode) apiNode.textContent = apiBase;
+  } catch (err) {
+    alert(`自动检测失败: ${err}`);
+  }
+};
+
+document.getElementById('save-api').onclick = () => {
+  apiBase = document.getElementById('api-url').value.trim();
+  apiSecret = document.getElementById('api-secret').value.trim();
+  localStorage.setItem(storageKeys.api, apiBase);
+  localStorage.setItem(storageKeys.secret, apiSecret);
+  const apiNode = document.getElementById('api');
+  if (apiNode) apiNode.textContent = apiBase;
+  log(`已保存 API 设置: ${apiBase}`);
+  loadOverview();
+};
+
+document.getElementById('save-sub').onclick = () => {
+  const p = profiles.find(x => x.id===activeProfileId);
+  if (p && p.source === 'local') {
+    const list = JSON.parse(localStorage.getItem(storageKeys.profiles) || '[]');
+    const idx = list.findIndex(x => x.id===p.id);
+    if (idx >= 0) {
+      list[idx].url = document.getElementById('sub-url').value.trim();
+      list[idx].target = document.getElementById('sub-target').value.trim();
+      list[idx].template = document.getElementById('sub-template').value.trim();
+      localStorage.setItem(storageKeys.profiles, JSON.stringify(list));
+      log(`已保存本地配置: ${list[idx].name}`);
+    }
+  }
+  buildCommandPreview();
+};
+
+document.getElementById('copy-command').onclick = async () => {
+  const text = buildCommandPreview();
+  await navigator.clipboard.writeText(text);
+  log('已复制应用命令');
+};
+
+document.getElementById('copy-port-check').onclick = async () => {
+  const p = runtimeConfig?.ports || {};
+  const cmd = `lsof -nP -iTCP:${p.controlPanelPort || 19091} -sTCP:LISTEN; lsof -nP -iTCP:${p.externalControllerPort || 19090} -sTCP:LISTEN; lsof -nP -iTCP:${p.allProxyPort || 17890} -sTCP:LISTEN; lsof -nP -iTCP:${p.subconverterHostPort || 25501} -sTCP:LISTEN`;
+  await navigator.clipboard.writeText(cmd);
+  log('已复制端口冲突检查命令');
+};
+
+document.getElementById('open-add-profile').onclick = openAddModal;
+document.getElementById('proxy-delay-fab').onclick = () => batchDelayTestAll();
+document.getElementById('modal-cancel').onclick = closeAddModal;
+document.getElementById('modal-save').onclick = saveNewProfile;
+document.getElementById('modal-mask').onclick = (e) => { if (e.target.id === 'modal-mask') closeAddModal(); };
+
+
+async function setProxyRunning(shouldRun, source = 'ui') {
+  if (shouldRun === proxyRunning) return;
+  if (shouldRun) {
+    await setMode('rule');
+    proxyRunning = true;
+    proxyStartAt = Date.now();
+    localStorage.setItem(storageKeys.proxyRunning, '1');
+    localStorage.setItem(storageKeys.proxyStartAt, String(proxyStartAt));
+    log(`代理已启动(${source})`);
+  } else {
+    await setMode('direct');
+    proxyRunning = false;
+    proxyStartAt = 0;
+    localStorage.setItem(storageKeys.proxyRunning, '0');
+    localStorage.removeItem(storageKeys.proxyStartAt);
+    log(`代理已暂停(${source})`);
+  }
+  localStorage.setItem(storageKeys.systemProxyUi, proxyRunning ? '1' : '0');
+  document.getElementById('system-proxy-toggle').checked = proxyRunning;
+  updateFab();
+}
+
+document.getElementById('system-proxy-toggle').addEventListener('change', async (e) => {
+  try {
+    await setProxyRunning(e.target.checked, 'system-toggle');
+  } catch (err) {
+    e.target.checked = proxyRunning;
+    log(`系统代理切换失败: ${err}`, 'error');
+    alert(`操作失败: ${err}`);
+  }
+});
+
+Array.from(document.querySelectorAll('input[name="outbound-mode"]')).forEach(radio => {
+  radio.addEventListener('change', async (e) => {
+    if (!e.target.checked) return;
+    try {
+      await setMode(e.target.value);
+      proxyRunning = e.target.value !== 'direct';
+      if (proxyRunning && !proxyStartAt) proxyStartAt = Date.now();
+      if (!proxyRunning) proxyStartAt = 0;
+      localStorage.setItem(storageKeys.proxyRunning, proxyRunning ? '1':'0');
+      localStorage.setItem(storageKeys.proxyStartAt, String(proxyStartAt));
+      localStorage.setItem(storageKeys.systemProxyUi, proxyRunning ? '1':'0');
+      document.getElementById('system-proxy-toggle').checked = proxyRunning;
+      updateFab();
+    } catch (err) {
+      log(`切换模式失败: ${err}`, 'error');
+      alert(`切换模式失败: ${err}`);
+    }
+  });
+});
+
+const fab = document.getElementById('proxy-fab');
+fab.onclick = async () => {
+  try {
+    await setProxyRunning(!proxyRunning, 'play-button');
+  } catch (err) {
+    log(`切换代理状态失败: ${err}`, 'error');
+    alert(`操作失败: ${err}`);
+  }
+};
+
+(async () => {
+  initSettings();
+  await loadRuntimeConfig();
+  try { await detectApiBase(); } catch (err) { log(`初始化未检测到 API: ${err}`, 'error'); }
+
+  const summary = await loadSubscriptionSummary();
+  if (runtimeConfig?.profiles?.[0]) {
+    runtimeConfig.profiles[0].meta = { traffic: summary.traffic || '-', expire: summary.expire || '-' };
+  }
+
+  renderProfiles();
+  buildCommandPreview();
+  switchView('overview');
+  await loadOverview();
+  await loadProxies();
+  updateFab();
+  startRuntimeTicker();
+  setInterval(updateTrafficStats, 3000);
+})();
+</script>
+</body>
+</html>
