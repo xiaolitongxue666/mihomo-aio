@@ -15,8 +15,8 @@ services:
     depends_on:
       - subconverter
     volumes:
-      - ./data/config:/etc/mihomo
-      - ./data/mihomo:/var/lib/mihomo
+      - ./data/config:/etc/mihomo:Z
+      - ./data/mihomo:/var/lib/mihomo:Z
     ports:
       - "${ALL_PROXY_PORT:-7890}:${MIXED_PORT:-7890}"
       - "${EXTERNAL_CONTROLLER_PORT:-9090}:${EXTERNAL_CONTROLLER_PORT:-9090}"
@@ -28,6 +28,6 @@ services:
     depends_on:
       - mihomo-core
     volumes:
-      - ./dashboard:/usr/share/nginx/html:ro
+      - ./dashboard:/usr/share/nginx/html:Z,ro
     ports:
       - "${CONTROL_PANEL_PORT:-9091}:${DASHBOARD_PORT:-80}"

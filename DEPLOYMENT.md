@@ -4,6 +4,7 @@
 
 ```bash
 cp .env.example .env
+# 可选：VPS_DEPLOY_CONTAINER_ENGINE=docker 或 podman
 ./scripts/up.sh
 ```
 
@@ -56,7 +57,30 @@ sudo bash vps-mihomo-aio-bootstrap.sh .
 - Docker 路径可按需自动安装 Docker CE（含 apt 源回退）
 - 启动 compose 并触发健康检查
 
-## 3. 常用运维
+## 3. 本地验证（不走 VM）
+
+```bash
+# Docker 路径
+cp .env.example .env
+sed -i.bak 's/^VPS_DEPLOY_CONTAINER_ENGINE=.*/VPS_DEPLOY_CONTAINER_ENGINE=docker/' .env
+./scripts/up.sh
+./scripts/health-check.sh
+./scripts/down.sh
+
+# Podman 路径
+sed -i.bak 's/^VPS_DEPLOY_CONTAINER_ENGINE=.*/VPS_DEPLOY_CONTAINER_ENGINE=podman/' .env
+./scripts/up.sh
+./scripts/health-check.sh
+./scripts/down.sh
+```
+
+如需完整链路验证，可执行：
+
+```bash
+./scripts/smoke-test.sh
+```
+
+## 4. 常用运维
 
 ```bash
 # 在线/离线部署后都可用
@@ -65,7 +89,7 @@ sudo bash vps-mihomo-aio-bootstrap.sh .
 ./scripts/subscription-hot-reload.sh
 ```
 
-## 4. 常见问题
+## 5. 常见问题
 
 - Docker 安装失败：检查远端系统是否 Ubuntu/Debian，确认 `DOCKER_CE_APT_MIRROR`。
 - Podman 启动失败：确认已安装 `podman-compose`。

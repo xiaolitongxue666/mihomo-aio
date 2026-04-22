@@ -18,6 +18,23 @@ cp .env.example .env
 ./scripts/up.sh
 ```
 
+### 本地切换 Docker / Podman
+
+本地 `./scripts/up.sh` 与 `./scripts/down.sh` 会读取 `.env` 中的 `VPS_DEPLOY_CONTAINER_ENGINE`：
+
+```bash
+# Docker（默认）
+VPS_DEPLOY_CONTAINER_ENGINE=docker
+
+# Podman
+VPS_DEPLOY_CONTAINER_ENGINE=podman
+```
+
+Podman 模式要求已安装 `podman` 和 `podman-compose`，并且本地已有镜像：
+
+- `localhost/mihomo-core:latest`
+- `localhost/subconverter:latest`（或 `docker.io/tindy2013/subconverter:latest`）
+
 ## 离线 VPS 部署
 
 离线场景（VPS 无外网、无代理）请使用：
