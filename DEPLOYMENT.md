@@ -1,76 +1,73 @@
 # 部署说明
 
-## 1. 环境准备
+## 1. 在线部署（有外网）
 
-- Docker Engine
-- Docker Compose Plugin（支持 `docker compose`）
-- 可访问 GitHub Releases（用于构建 mihomo 镜像）
+```bash
+cp .env.example .env
+./scripts/up.sh
+```
 
-## 2. 配置
+## 2. 离线 VPS 部署（无外网/无代理）
+
+### 2.1 本地准备
+
+1. 复制并填写 `.env`：
 
 ```bash
 cp .env.example .env
 ```
 
-建议至少配置：
+2. 重点配置项：
 
-- `RAW_SUB_URL`（订阅地址）
-- `ALL_PROXY_PORT`（宿主机代理端口）
-- `CONTROL_PANEL_PORT`（宿主机 Web 管理端口）
+- `RAW_SUB_URL`
+- `VPS_DEPLOY_SSH_HOST`
+- `VPS_DEPLOY_SSH_USER`
+- `VPS_DEPLOY_REMOTE_DIR`
+- `VPS_DEPLOY_DEPLOY_DIR`
+- `VPS_DEPLOY_CONTAINER_ENGINE`（`docker` 或 `podman`）
 
-可选强化配置：
-
-- `SECRET`（external-controller 鉴权密钥）
-- `EXTERNAL_CONTROLLER_PORT`（API 端口）
-
-## 3. 启动
+### 2.2 本地打包与上传
 
 ```bash
-./scripts/up.sh
+./deploy-remote.sh pack
+./deploy-remote.sh upload
+# 或
+./deploy-remote.sh all
 ```
 
-启动脚本行为：
+生成产物：
 
-- 启动容器栈（后台）
-- 打印 Web 管理地址
-- 启动后返回宿主机终端，不进入容器
+- `dist/mihomo-aio-bundle.zip`
+- `dist/mihomo-aio-images.tar.gz`
 
-## 4. 验证
+### 2.3 远端执行
+
+SSH 到 VPS 后进入上传目录：
 
 ```bash
+sudo bash vps-mihomo-aio-bootstrap.sh .
+```
+
+脚本行为：
+
+- 解压项目 bundle
+- 导入离线镜像（`docker load` / `podman load`）
+- Podman 路径自动对 `localhost/*:latest` 补标签
+- Docker 路径可按需自动安装 Docker CE（含 apt 源回退）
+- 启动 compose 并触发健康检查
+
+## 3. 常用运维
+
+```bash
+# 在线/离线部署后都可用
 ./scripts/health-check.sh
 ./scripts/smoke-test.sh
-```
-
-## 5. 运维常用
-
-```bash
-# 进入 core 容器（排障）
-./scripts/shell.sh
-
-# 订阅热重载
 ./scripts/subscription-hot-reload.sh
-
-# 查看节点延迟
-./scripts/list-proxies-latency.sh 20
-
-# 按序号切换节点
-./scripts/select-proxy-by-index.sh 20
 ```
 
-## 6. 停止
+## 4. 常见问题
 
-```bash
-./scripts/down.sh
-```
-
-## 7. 常见问题
-
-- Dashboard 能打开但无数据：
-  - 检查 API 地址与 `SECRET`
-  - 检查 `EXTERNAL_CONTROLLER_PORT` 映射
-- 订阅拉取失败：
-  - 检查 `RAW_SUB_URL`
-  - 检查 `subconverter` 是否就绪
-- 端口冲突：
-  - 修改 `.env` 中宿主机端口（如 `CONTROL_PANEL_PORT`、`ALL_PROXY_PORT`）
+- Docker 安装失败：检查远端系统是否 Ubuntu/Debian，确认 `DOCKER_CE_APT_MIRROR`。
+- Podman 启动失败：确认已安装 `podman-compose`。
+- Dashboard 无数据：检查 `SECRET` 与 `EXTERNAL_CONTROLLER_PORT`。
+- 订阅拉取失败：检查 `RAW_SUB_URL` 与 `subconverter` 容器日志。

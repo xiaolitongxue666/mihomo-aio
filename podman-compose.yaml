@@ -1,0 +1,33 @@
+services:
+  subconverter:
+    image: docker.io/tindy2013/subconverter:latest
+    container_name: mihomo-aio-subconverter
+    restart: unless-stopped
+    ports:
+      - "${SUBCONVERTER_HOST_PORT:-25500}:25500"
+
+  mihomo-core:
+    image: localhost/mihomo-core:latest
+    container_name: mihomo-aio-core
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      - subconverter
+    volumes:
+      - ./data/config:/etc/mihomo
+      - ./data/mihomo:/var/lib/mihomo
+    ports:
+      - "${ALL_PROXY_PORT:-7890}:${MIXED_PORT:-7890}"
+      - "${EXTERNAL_CONTROLLER_PORT:-9090}:${EXTERNAL_CONTROLLER_PORT:-9090}"
+
+  dashboard:
+    image: docker.io/library/nginx:alpine
+    container_name: mihomo-aio-dashboard
+    restart: unless-stopped
+    depends_on:
+      - mihomo-core
+    volumes:
+      - ./dashboard:/usr/share/nginx/html:ro
+    ports:
+      - "${CONTROL_PANEL_PORT:-9091}:${DASHBOARD_PORT:-80}"

@@ -29,3 +29,6 @@ data/config/*
 
 data/mihomo/*
 !data/mihomo/.gitkeep
+
+# Offline build artifacts
+dist/
