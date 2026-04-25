@@ -63,29 +63,35 @@ cmd_pack() {
     docker-compose -f docker-compose.yaml config --images >"$compose_images_file"
   fi
 
-  local core_image="" subconverter_image="" line
+  local core_image="" subconverter_image="" dashboard_image="" line
   while IFS= read -r line || [ -n "$line" ]; do
     [ -z "$line" ] && continue
     case "$line" in
       *subconverter*) subconverter_image="$line" ;;
       *mihomo*core* | *mihomo-aio*) core_image="$line" ;;
+      *nginx*) dashboard_image="$line" ;;
     esac
   done <"$compose_images_file"
 
   [ -n "$core_image" ] || { echo "错误：无法解析 mihomo core 镜像名。" >&2; exit 1; }
   [ -n "$subconverter_image" ] || { echo "错误：无法解析 subconverter 镜像名。" >&2; exit 1; }
+  [ -n "$dashboard_image" ] || { echo "错误：无法解析 dashboard/nginx 镜像名。" >&2; exit 1; }
   case "$core_image" in *:*) ;; *) core_image="${core_image}:latest" ;; esac
   case "$subconverter_image" in *:*) ;; *) subconverter_image="${subconverter_image}:latest" ;; esac
+  case "$dashboard_image" in *:*) ;; *) dashboard_image="${dashboard_image}:latest" ;; esac
+
+  docker image inspect "$dashboard_image" >/dev/null 2>&1 || docker pull "$dashboard_image"
 
   docker save "$core_image" -o "${image_work_dir}/mihomo-core.tar"
   docker save "$subconverter_image" -o "${image_work_dir}/subconverter.tar"
-  gzip -f "${image_work_dir}/mihomo-core.tar" "${image_work_dir}/subconverter.tar"
-  tar czf "${DIST_DIR}/${IMAGES_TGZ_NAME}" -C "$image_work_dir" mihomo-core.tar.gz subconverter.tar.gz
+  docker save "$dashboard_image" -o "${image_work_dir}/nginx-alpine.tar"
+  gzip -f "${image_work_dir}/mihomo-core.tar" "${image_work_dir}/subconverter.tar" "${image_work_dir}/nginx-alpine.tar"
+  tar czf "${DIST_DIR}/${IMAGES_TGZ_NAME}" -C "$image_work_dir" mihomo-core.tar.gz subconverter.tar.gz nginx-alpine.tar.gz
 
   rm -f "${DIST_DIR}/${BUNDLE_ZIP_NAME}"
   zip -q -r "${DIST_DIR}/${BUNDLE_ZIP_NAME}" \
     docker-compose.yaml podman-compose.yaml Dockerfile entrypoint.sh scripts dashboard data .env .env.example \
-    mihomo-docker-prereq.inc.sh vps-mihomo-aio-bootstrap.sh README.md DEPLOYMENT.md
+    mihomo-docker-prereq.inc.sh mihomo-podman-prereq.inc.sh vps-mihomo-aio-bootstrap.sh README.md DEPLOYMENT.md
 
   trap - RETURN
   cleanup_pack
@@ -131,11 +137,14 @@ cmd_upload() {
     scp_options+=(-o "StrictHostKeyChecking=accept-new" -o "UserKnownHostsFile=/dev/null")
   fi
 
+  ssh "${ssh_options[@]}" "${user}@${host}" "umask 022; mkdir -p -- $(printf "%q" "$remote_dir")"
+
   scp "${scp_options[@]}" \
     "${DIST_DIR}/${BUNDLE_ZIP_NAME}" \
     "${DIST_DIR}/${IMAGES_TGZ_NAME}" \
     "${SCRIPT_DIR}/vps-mihomo-aio-bootstrap.sh" \
     "${SCRIPT_DIR}/mihomo-docker-prereq.inc.sh" \
+    "${SCRIPT_DIR}/mihomo-podman-prereq.inc.sh" \
     "${user}@${host}:${remote_dir}"
 
   ssh "${ssh_options[@]}" "${user}@${host}" "
@@ -145,7 +154,8 @@ cmd_upload() {
     test -s ${IMAGES_TGZ_NAME}
     test -s vps-mihomo-aio-bootstrap.sh
     test -s mihomo-docker-prereq.inc.sh
-    sed -i 's/\\r\\$//' vps-mihomo-aio-bootstrap.sh mihomo-docker-prereq.inc.sh
+    test -s mihomo-podman-prereq.inc.sh
+    sed -i 's/\\r\\$//' vps-mihomo-aio-bootstrap.sh mihomo-docker-prereq.inc.sh mihomo-podman-prereq.inc.sh
   "
 
   echo "上传完成。请在远端执行: sudo bash vps-mihomo-aio-bootstrap.sh ."

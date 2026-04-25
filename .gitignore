@@ -32,3 +32,6 @@ data/mihomo/*
 
 # Offline build artifacts
 dist/
+# Editor / sed backup files (may contain copied secrets)
+*.bak
+

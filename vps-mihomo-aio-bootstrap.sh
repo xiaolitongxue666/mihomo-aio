@@ -65,10 +65,13 @@ tar xzf "$IMG_TGZ" -C "$image_temp_dir"
   cd "$image_temp_dir"
   [ -f mihomo-core.tar.gz ] && gunzip -f mihomo-core.tar.gz
   [ -f subconverter.tar.gz ] && gunzip -f subconverter.tar.gz
+  [ -f nginx-alpine.tar.gz ] && gunzip -f nginx-alpine.tar.gz
   [ -f mihomo-core.tar ] || { echo "错误：镜像包缺少 mihomo-core.tar(.gz)" >&2; exit 1; }
   [ -f subconverter.tar ] || { echo "错误：镜像包缺少 subconverter.tar(.gz)" >&2; exit 1; }
+  [ -f nginx-alpine.tar ] || { echo "错误：镜像包缺少 nginx-alpine.tar(.gz)；请用新版 deploy-remote.sh pack 重新打包" >&2; exit 1; }
   "$ENGINE" load -i mihomo-core.tar
   "$ENGINE" load -i subconverter.tar
+  "$ENGINE" load -i nginx-alpine.tar
 )
 
 mkdir -p "$DEPLOY_DIR"
@@ -81,6 +84,9 @@ if [ "$ENGINE" = "podman" ]; then
   [ -n "$loaded_subconverter_image" ] || { echo "错误：未找到已加载的 subconverter 镜像" >&2; exit 1; }
   "$ENGINE" tag "$loaded_core_image" "localhost/mihomo-core:latest"
   "$ENGINE" tag "$loaded_subconverter_image" "localhost/subconverter:latest"
+  loaded_dashboard_image="$($ENGINE images --format "{{.Repository}}:{{.Tag}}" | sed -n '/nginx/p' | sed -n '1p' || true)"
+  [ -n "$loaded_dashboard_image" ] || { echo "错误：未找到已加载的 dashboard/nginx 镜像" >&2; exit 1; }
+  "$ENGINE" tag "$loaded_dashboard_image" "localhost/mihomo-aio-dashboard:latest"
 elif [ "$ENGINE" = "docker" ]; then
   loaded_core_image="$($ENGINE images --format "{{.Repository}}:{{.Tag}}" | sed -n '/mihomo[-_]aio[-_]mihomo[-_]core/p' | sed -n '1p' || true)"
   [ -z "$loaded_core_image" ] && loaded_core_image="$($ENGINE images --format "{{.Repository}}:{{.Tag}}" | sed -n '/mihomo.*core/p' | sed -n '1p' || true)"
@@ -90,6 +96,11 @@ elif [ "$ENGINE" = "docker" ]; then
 fi
 
 cd "$DEPLOY_DIR"
+if [ -f "${DEPLOY_DIR}/.env" ]; then
+  echo "=== 本栈将发布的主机端口（${DEPLOY_DIR}/.env）==="
+  grep -E '^(ALL_PROXY_PORT|EXTERNAL_CONTROLLER_PORT|CONTROL_PANEL_PORT|SUBCONVERTER_HOST_PORT)=' "${DEPLOY_DIR}/.env" 2>/dev/null || true
+  echo "若端口已被占用，请编辑上述 .env 后仅在本目录执行 compose down/up，勿影响其它服务。"
+fi
 if [ "$ENGINE" = "podman" ]; then
   if command -v podman >/dev/null 2>&1 && podman compose version >/dev/null 2>&1; then
     podman compose -f podman-compose.yaml down 2>/dev/null || true

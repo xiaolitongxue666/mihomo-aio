@@ -30,10 +30,11 @@ VPS_DEPLOY_CONTAINER_ENGINE=docker
 VPS_DEPLOY_CONTAINER_ENGINE=podman
 ```
 
-Podman 模式要求已安装 `podman` 和 `podman-compose`，并且本地已有镜像：
+Podman 模式要求已安装 `podman` 和 `podman-compose`，并且本地已有镜像（或由 `vps-mihomo-aio-bootstrap.sh` 离线导入后打标签）：
 
 - `localhost/mihomo-core:latest`
-- `localhost/subconverter:latest`（或 `docker.io/tindy2013/subconverter:latest`）
+- `localhost/subconverter:latest`
+- `localhost/mihomo-aio-dashboard:latest`
 
 ## 离线 VPS 部署
 
@@ -49,7 +50,7 @@ sudo bash vps-mihomo-aio-bootstrap.sh .
 `pack` 阶段会在本机构建并导出镜像，生成：
 
 - `dist/mihomo-aio-bundle.zip`
-- `dist/mihomo-aio-images.tar.gz`
+- `dist/mihomo-aio-images.tar.gz`（内含 mihomo-core、subconverter、nginx-alpine 离线层）
 
 详细步骤见 `DEPLOYMENT.md`。
 

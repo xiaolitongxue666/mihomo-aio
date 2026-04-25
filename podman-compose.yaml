@@ -1,6 +1,6 @@
 services:
   subconverter:
-    image: docker.io/tindy2013/subconverter:latest
+    image: localhost/subconverter:latest
     container_name: mihomo-aio-subconverter
     restart: unless-stopped
     ports:
@@ -22,7 +22,7 @@ services:
       - "${EXTERNAL_CONTROLLER_PORT:-9090}:${EXTERNAL_CONTROLLER_PORT:-9090}"
 
   dashboard:
-    image: docker.io/library/nginx:alpine
+    image: localhost/mihomo-aio-dashboard:latest
     container_name: mihomo-aio-dashboard
     restart: unless-stopped
     depends_on:
