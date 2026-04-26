@@ -4,7 +4,7 @@ services:
     container_name: mihomo-aio-subconverter
     restart: unless-stopped
     ports:
-      - "${SUBCONVERTER_HOST_PORT:-25500}:25500"
+      - "127.0.0.1:${SUBCONVERTER_HOST_PORT:-25500}:25500"
 
   mihomo-core:
     image: localhost/mihomo-core:latest
@@ -18,8 +18,8 @@ services:
       - ./data/config:/etc/mihomo:Z
       - ./data/mihomo:/var/lib/mihomo:Z
     ports:
-      - "${ALL_PROXY_PORT:-7890}:${MIXED_PORT:-7890}"
-      - "${EXTERNAL_CONTROLLER_PORT:-9090}:${EXTERNAL_CONTROLLER_PORT:-9090}"
+      - "127.0.0.1:${ALL_PROXY_PORT:-7890}:${MIXED_PORT:-7890}"
+      - "127.0.0.1:${EXTERNAL_CONTROLLER_PORT:-9090}:${EXTERNAL_CONTROLLER_PORT:-9090}"
 
   dashboard:
     image: localhost/mihomo-aio-dashboard:latest
@@ -30,4 +30,4 @@ services:
     volumes:
       - ./dashboard:/usr/share/nginx/html:Z,ro
     ports:
-      - "${CONTROL_PANEL_PORT:-9091}:${DASHBOARD_PORT:-80}"
+      - "127.0.0.1:${CONTROL_PANEL_PORT:-9091}:${DASHBOARD_PORT:-80}"

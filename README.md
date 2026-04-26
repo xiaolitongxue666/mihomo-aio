@@ -9,6 +9,7 @@
 - Docker / Podman 双引擎离线部署
 - `.env` 统一管理端口、订阅、密钥、远端部署参数
 - 脚本化控制：延迟查询、节点切换、订阅热重载、健康检查
+- 宿主机端口在 compose 中仅发布到 **127.0.0.1**（mixed / 外部控制器 / 面板 / subconverter），公网访问请配合 Nginx 等反代（参见 `vps_construct_scripts` 中 mihomo 相关说明）
 
 ## 快速开始（在线）
 
