@@ -4,7 +4,9 @@
 
 ## 功能概览
 
-- 核心固定为 `mihomo`
+- 核心固定为 `mihomo`（构建默认 `MIHOMO_VERSION=v1.19.30`）
+- 镜像钉 tag：`tindy2013/subconverter:0.9.0`、`nginx:1.27-alpine`、`alpine:3.20`
+- 宿主机 subconverter 默认口与 `.env.example` 对齐为 **25501**（容器内仍是 25500）
 - 三容器编排：`subconverter + mihomo-core + dashboard`
 - Docker / Podman 双引擎离线部署
 - `.env` 统一管理端口、订阅、密钥、远端部署参数
@@ -62,7 +64,7 @@ sudo bash vps-mihomo-aio-bootstrap.sh .
 - 进入核心容器：`./scripts/shell.sh`
 - 延迟查询：`./scripts/list-proxies-latency.sh [limit]`
 - 按序号切换节点：`./scripts/select-proxy-by-index.sh [limit]`
-- 订阅热重载：`./scripts/subscription-hot-reload.sh`
+- 订阅热重载：`./scripts/subscription-hot-reload.sh`（VPS crontab 模板：`scripts/vps-cron-subscription.example.sh`，生产每天 01:00）
 - 健康检查：`./scripts/health-check.sh`
 - 冒烟测试：`./scripts/smoke-test.sh`
 - API 调试：`./scripts/debug-api.sh`

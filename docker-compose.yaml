@@ -1,16 +1,16 @@
 services:
   subconverter:
-    image: tindy2013/subconverter:latest
+    image: tindy2013/subconverter:0.9.0
     container_name: mihomo-aio-subconverter
     restart: unless-stopped
     ports:
-      - "127.0.0.1:${SUBCONVERTER_HOST_PORT:-25500}:25500"
+      - "127.0.0.1:${SUBCONVERTER_HOST_PORT:-25501}:25500"
 
   mihomo-core:
     build:
       context: .
       args:
-        MIHOMO_VERSION: ${MIHOMO_VERSION:-v1.19.24}
+        MIHOMO_VERSION: ${MIHOMO_VERSION:-v1.19.30}
     container_name: mihomo-aio-core
     restart: unless-stopped
     env_file:
@@ -25,7 +25,7 @@ services:
       - "127.0.0.1:${EXTERNAL_CONTROLLER_PORT:-9090}:${EXTERNAL_CONTROLLER_PORT:-9090}"
 
   dashboard:
-    image: nginx:alpine
+    image: nginx:1.27-alpine
     container_name: mihomo-aio-dashboard
     restart: unless-stopped
     depends_on:

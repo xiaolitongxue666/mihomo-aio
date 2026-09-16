@@ -1,6 +1,6 @@
 FROM alpine:3.20
 
-ARG MIHOMO_VERSION=v1.19.24
+ARG MIHOMO_VERSION=v1.19.30
 ARG TARGETARCH
 
 RUN apk add --no-cache ca-certificates curl gzip sed bash
