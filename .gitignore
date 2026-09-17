@@ -37,4 +37,5 @@ dist/
 
 .codegraph/
 undefined/
+.local/
 
