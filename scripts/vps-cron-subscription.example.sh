@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # 安装到 ubuntu crontab 的模板（与生产 2026-09-16 对照）。
 # 生产历史树：/home/ubuntu/Code/VPN/mihomo-aio
+# 本机扁平树（勿写进生产 crontab）：Code/VPS/mihomo-aio
 # 本机不要提交 .env。不要把 RAW_SUB_URL 写进本文件。
 #
 # crontab -e（用户 ubuntu）：
