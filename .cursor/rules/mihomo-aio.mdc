@@ -1,0 +1,12 @@
+---
+description: mihomo-aio 出口契约
+alwaysApply: true
+---
+
+生产路径 `/home/ubuntu/Code/VPS/mihomo-aio`。部署：`./scripts/up.sh`。订阅只在本地 `.env`。
+
+只绑 `127.0.0.1`。业务 `HTTP_PROXY` = `:17890`。面板 `:19091` 不是入口。rss submodule 副本只消费，勿 `pull --remote`。
+
+测试：`./scripts/smoke-test.sh`；生产裸 HTTP `127.0.0.1:17890` 为 **400** 算在听。
+
+细节：[AGENTS.md](../../AGENTS.md)
