@@ -18,7 +18,7 @@
 ## 路径
 
 - 本机：`Code/VPS/mihomo-aio`
-- 生产独立栈：`/home/ubuntu/Code/VPN/mihomo-aio`
+- 生产独立栈：`/home/ubuntu/Code/VPS/mihomo-aio`
 - rss 仓内另有 **submodule 副本**：只消费，勿 `git submodule update --remote`，勿移出 rss。
 
 ## 硬约束
