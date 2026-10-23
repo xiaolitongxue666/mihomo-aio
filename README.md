@@ -4,7 +4,7 @@
 
 ## 功能概览
 
-- 核心固定为 `mihomo`（构建默认 `MIHOMO_VERSION=v1.19.30`）
+- 核心固定为 `mihomo`（构建默认 `MIHOMO_VERSION=v1.19.33`）
 - 镜像钉 tag：`tindy2013/subconverter:0.9.0`、`nginx:1.27-alpine`、`alpine:3.20`
 - 宿主机 subconverter 默认口与 `.env.example` 对齐为 **25501**（容器内仍是 25500）
 - 三容器编排：`subconverter + mihomo-core + dashboard`
